@@ -54,7 +54,7 @@ import time
 
 
 class constants:
-	osVersion = "unknown"
+	oVersion = "unknown"
 
 
 ###### FUNCTIONS BELOW #####
@@ -92,6 +92,7 @@ def hostsup_scans(list):  # maybe change to starter scan
 	grepHostsUp = 'cat hostsup*.gnmap | grep Up | cut -d " " -f2 | sort -u'
 	grepHostsUpResults = subprocess.check_output(grepHostsUp, shell=True)
 	lines = grepHostsUpResults.split("\n")
+
 	# removing any list items that are blank
 	lines = [x for x in lines if x]
 
@@ -101,6 +102,11 @@ def hostsup_scans(list):  # maybe change to starter scan
 		line = line.strip()
 		allHostsUp.write("%s\n" % line)
 	allHostsUp.close()
+
+
+#need to trouble shoot this
+	# if there are web ports we do eyewitness scan
+	# if no web ports we do not run
 
 	print "[!] Lauching Webports scan"
 	# launching not as multi process so we know when it finishes
@@ -188,16 +194,21 @@ def portSelection(filename, portsList, outputFile):
 		# removing any list items that are blank
 		lines = [x for x in lines if x]
 		#print lines
+
 		for x in lines:
+				#prevents IP address being written twice
 			if x not in placeholder:
 				placeholder.append(x)
 		# writing hosts with correct ports to a file
 		print "PLACEHOLDER",placeholder
+	if placeholder:
 		fileWriting = open(outputFile, 'a')
-	for line in placeholder:
-		line = line.strip()
-		fileWriting.write("%s\n" % line)
-		fileWriting.close()
+		for line in placeholder:
+			line = line.strip()
+			fileWriting.write("%s\n" % line)
+			fileWriting.close()
+	else:
+		print "NO PORTS OPEN ON COMMON WEB PORTS"
 
 
 def parseScanResults(results, filename, address):
@@ -250,6 +261,8 @@ def webports(filename):
 
 	webresults = scan(webScan)
 
+	#if webresults has web ports open, run eyewistness
+
 
 # print testresults
 # parseScanResults(testresults, 'webports.txt',address)
@@ -258,8 +271,15 @@ def ftpPort(filename):
 	print "[-] Starting FTP scan, checks anonymous"
 	ftpScan = 'nmap -sV -Pn -vv -p 21 -iL %s --script=banner,ftp-anon --oA ftpPorts' % filename
 
-	ftpResults = scan(ftpScan)
+	#ftpResults = scan(ftpScan)
 
+
+""" GREP AND CUTTING FOR FTP ANONYMOUS
+ root@traversal-lap:~/PycharmProjects/autoRecon/base# cat ftpPorts.nmap  | grep -B 8 230 | grep "Nmap scan report" | cut -d " " -f 5
+192.168.56.102
+
+
+ """
 
 # need to add parsing the file for anonymous access.
 
@@ -271,7 +291,7 @@ def smbScan(filename):
 	enum4LinuxResults = scan(smbScan)
 
 
-#
+
 # to grep correct portscat 	test | grep	22 / open | cut - d 	" " - f2
 #  need to add parsing the file for smb results, then add function for ENUM4Linux.
 
@@ -351,6 +371,46 @@ def getOsVersion():
 ## Not anymore takes a filename as an argument now :)
 
 if __name__ == '__main__':
+
+
+
+
+	try:
+		checkPermissions = 'whoami'
+		checkPermissionsResults = scan(checkPermissions)
+	except Exception as e:
+		print e
+
+	if 'root' in checkPermissionsResults:
+		print "====You are Root that is good! Continuing===="
+	else:
+		"You are not root, please run as root!"
+		"EXITING"
+		exit()
+
+
+	#print checkPermissionsResults
+	#finding full full path of script
+	checkPath = 'pwd'
+	FullPath = scan(checkPath).strip() + '/'
+	print "The Full path to be used for script is ", FullPath
+
+	baseDir = "base"
+	FullPath = ''.join((FullPath,baseDir)) + '/'
+	print "Full path and baseDir ", FullPath
+
+	# create base sub dir to place all files
+	try:
+		mkBaseDir = "mkdir %s" % baseDir
+		scan(mkBaseDir)
+	except Exception as e:
+		print e
+	#check dir was created
+	checkDir = "ls | grep base"
+	checkDirDirResults = scan(checkDir)
+	if 'base' in checkDirDirResults:
+		print "BASE directory found.. continuing"
+
 	# open file'
 
 	# === Commented out for easy testing ==#
