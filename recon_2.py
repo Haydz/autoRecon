@@ -370,46 +370,85 @@ def getOsVersion():
 # this is the start of the script, taking the IP addresses from a text file called IP.txt
 ## Not anymore takes a filename as an argument now :)
 
+def BaseLineTest():
+    # Checking Running as root, for write perms
+    try:
+        checkPermissions = 'whoami'
+        checkPermissionsResults = scan(checkPermissions)
+    except Exception as e:
+        print e
+
+    if 'root' in checkPermissionsResults:
+        print "====You are Root that is good! Continuing===="
+    else:
+        "You are not root, please run as root!"
+        "EXITING"
+        exit()
+
+    #finding full full path of script
+    checkPath = 'pwd'
+    FullPath = scan(checkPath).strip() + '/'
+    print "The Full path to be used for script is ", FullPath
+
+
+    baseDir = "base"
+    # create base sub dir to place all files
+    try:
+        mkBaseDir = "mkdir %s" % baseDir
+        scan(mkBaseDir)
+    except Exception as e:
+        print e
+
+    # check dir was created
+    checkDir = "ls | grep base"
+    checkDirDirResults = scan(checkDir)
+    if 'base' in checkDirDirResults:
+        print "BASE directory found.. continuing"
+
+    FullPath = ''.join((FullPath, baseDir)) + '/'
+    print "Full path and baseDir for script will be ", FullPath
+
+    return FullPath
 if __name__ == '__main__':
 
+	BaseLineTest()
 
 
-
-	try:
-		checkPermissions = 'whoami'
-		checkPermissionsResults = scan(checkPermissions)
-	except Exception as e:
-		print e
-
-	if 'root' in checkPermissionsResults:
-		print "====You are Root that is good! Continuing===="
-	else:
-		"You are not root, please run as root!"
-		"EXITING"
-		exit()
-
-
-	#print checkPermissionsResults
-	#finding full full path of script
-	checkPath = 'pwd'
-	FullPath = scan(checkPath).strip() + '/'
-	print "The Full path to be used for script is ", FullPath
-
-	baseDir = "base"
-	FullPath = ''.join((FullPath,baseDir)) + '/'
-	print "Full path and baseDir ", FullPath
-
-	# create base sub dir to place all files
-	try:
-		mkBaseDir = "mkdir %s" % baseDir
-		scan(mkBaseDir)
-	except Exception as e:
-		print e
-	#check dir was created
-	checkDir = "ls | grep base"
-	checkDirDirResults = scan(checkDir)
-	if 'base' in checkDirDirResults:
-		print "BASE directory found.. continuing"
+	# try:
+	# 	checkPermissions = 'whoami'
+	# 	checkPermissionsResults = scan(checkPermissions)
+	# except Exception as e:
+	# 	print e
+    #
+	# if 'root' in checkPermissionsResults:
+	# 	print "====You are Root that is good! Continuing===="
+	# else:
+	# 	"You are not root, please run as root!"
+	# 	"EXITING"
+	# 	exit()
+    #
+    #
+	# #print checkPermissionsResults
+	# #finding full full path of script
+	# checkPath = 'pwd'
+	# FullPath = scan(checkPath).strip() + '/'
+	# print "The Full path to be used for script is ", FullPath
+    #
+	# baseDir = "base"
+	# FullPath = ''.join((FullPath,baseDir)) + '/'
+	# print "Full path and baseDir ", FullPath
+    #
+	# # create base sub dir to place all files
+	# try:
+	# 	mkBaseDir = "mkdir %s" % baseDir
+	# 	scan(mkBaseDir)
+	# except Exception as e:
+	# 	print e
+	# #check dir was created
+	# checkDir = "ls | grep base"
+	# checkDirDirResults = scan(checkDir)
+	# if 'base' in checkDirDirResults:
+	# 	print "BASE directory found.. continuing"
 
 	# open file'
 
