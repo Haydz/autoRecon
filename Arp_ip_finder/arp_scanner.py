@@ -68,14 +68,27 @@ def packet_callback(packet):
 
 def arpPing(IPRange):
 	print " Running Arp Ping"
+	arpPingIPList = []
 	#arping(IPRange)
 	ans, unans = srp(Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=IPRange), timeout=5)
-	#ans.summary(lambda (s,r):  r.sprintf("%Ether.src% %ARP.psrc%"))
-	packet = ans
-	return packet
+	ans.summary(lambda (s,r):  r.sprintf("%Ether.src% %ARP.psrc%"))
+	for snd, rcv in ans:
+		print rcv.sprintf(r"%Ether.src% & %ARP.psrc%\\")
+		IP = rcv.sprintf("%ARP.psrc%")
+		arpPingIPList.append(IP)
+		print IP
+
+	return arpPingIPList
 """====START OF MAIN ====="""
 
 if __name__ == '__main__':
+
+	print "++++ This Script will identify IP addresses from ARP PACKETS ++++"
+	print "++++ and it will run an ArpPing Scan to be more acive        ++++"
+	print "Press Enter to continue, or press CTRL C to quit\n"
+	raw_input("> ")
+
+
 	seconds = 2
 	bpf = 'arp'
 	outPutFile = 'testip.txt'
@@ -83,23 +96,30 @@ if __name__ == '__main__':
 	FullPath = BaseLineTest()
 	time.sleep(2)
 
-	print "====starting Sniffer====="
-	print "Running Sniffer for %s " % seconds
+	print "\n\n\n====starting Sniffer====="
+	print "Running Sniffer for %s seconds\n\n " % seconds
 
 	sniff(filter=bpf, prn=packet_callback, timeout=seconds)
 
 
 	#print "Running Arp Ping"
-	arpPingResults = arpPing("192.168.0.*")
+	arpPingResults = arpPing("10.0.9.*")
 	print "ARP PING RESULTS "
-	results = arpPingResults.summary(lambda (s,r):  r.sprintf("%ARP.psrc%"))
-	print "RESULTS", results
+	print arpPingResults
+	#URL TO HELP http://www.secdev.org/projects/scapy/build_your_own_tools.html
 
+	#arpPingResults.summary(lambda (s,r):  r.sprintf("%ARP.psrc%"))
+	#print "RESULTS", results
+	#x = arping("10.0.9.*")
+	#print "x" , x
 	print "Sniffer finished"
 	#print "IP LIST:"
 	#print IPlist
 
 	FileFullPath = FullPath + outPutFile
+
+	#Creating blank file
+	ipFile = open(FileFullPath, 'w').close()
 
 	print "[!] Writing contents to %s" % outPutFile
 	if IPlist:
