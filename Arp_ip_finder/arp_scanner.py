@@ -141,7 +141,14 @@ if __name__ == '__main__':
 			print "Found Host: %s writing to file" % IP
 			ipFile.write(IP + '\n')
 		ipFile.close()
+		print "\n ====== Script has finished ======"
+		print "Folder where outputfile is"
+		print FullPath
 	else:
 		print "NO IP ADDRESSES FOUND"
+		print "Do you have an interface that is working???"
+
+
+
 
 
