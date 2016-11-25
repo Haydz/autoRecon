@@ -10,10 +10,10 @@ def scan(command):
 
 
 def BaseLineTest():
-	print "++++++++++++++++++++++++++++++++"
-	print "+++RUNNING BASELINE CHECKS +++++"
-	print "+++ ROOT | Base Directory etc+++++"
-	print "++++++++++++++++++++++++++++++++\n "
+	print "+++++++++++++++++++++++++++++++++++"
+	print "+++++ RUNNING BASELINE CHECKS +++++"
+	print "++++ ROOT | Base Directory etc ++++"
+	print "+++++++++++++++++++++++++++++++++++\n"
 	# Checking Running as root, for write perms
 	try:
 		checkPermissions = 'whoami'
