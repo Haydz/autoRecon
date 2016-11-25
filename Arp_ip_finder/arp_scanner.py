@@ -3,7 +3,6 @@
 import time
 from scapy.all import *
 
-#seconds = int(raw_input("Enter the amount of seconds you wish to scan\n"))
 
 def scan(command):
 	launchresults = subprocess.check_output(command, shell=True)
@@ -85,6 +84,19 @@ def arpPing(IPRange):
 	return arpPingIPList
 
 
+import socket
+import fcntl
+import struct
+
+def get_ip_address(ifname):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915,  # SIOCGIFADDR
+        struct.pack('256s', ifname[:15])
+    )[20:24])
+
+
 
 if __name__ == '__main__':
 	"""====START OF MAIN ====="""
@@ -95,11 +107,27 @@ if __name__ == '__main__':
 	print "Press Enter to continue, or press CTRL C to quit\n"
 	raw_input("> ")
 
+	Interface = raw_input("Please enter the interface name> ")
+
 	seconds = int(raw_input("Please enter the amount of seconds to Sniff ARP packerts for"
 				  "> "))
 
 
+	Iface = get_ip_address(Interface)
+	Iface2 = Iface.split(".")
+	Iface3 = Iface2[:-1]
+	Iface4 = '.'.join(Iface3)
+	IpAddress = Iface4+".*"
+
+
+	#raw_input("PAUSE")
+
+
+
+
+
 	#seconds = 2
+
 	bpf = 'arp'
 	outPutFile = 'ArpHosts.txt'
 	IPlist = []
@@ -113,7 +141,7 @@ if __name__ == '__main__':
 
 
 	#print "Running Arp Ping"
-	arpPingResults = arpPing("10.255.252.*")
+	arpPingResults = arpPing(IpAddress)
 	print "ARP PING RESULTS "
 	print arpPingResults
 	print IPlist
