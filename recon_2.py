@@ -71,16 +71,15 @@ def hostsup_scans(list):  # maybe change to starter scan
 	print"[+] Starting -sn scan for hosts up \n"
 	# tcpNameScan = 'nmap_%s_' % address\
 	# print "File name is: %s" %(list)
-	TCPSCAN = 'nmap -vv -sN -iL %s -oA hostsup1_sn' % (list)
+	TCPSCAN = 'nmap -vv -sN -iL %s -oA %shostsup1_sn' % (list, BaseFolder)
 	# tcp_results = scan(TCPSCAN)
 	# print tcp_results
 	# tcp_results = subprocess.check_output(TCPSCAN, shell=True)
 	print "[+] Starting -F scan for hosts up \n"
-	TCPSCAN2 = 'nmap -vv -F -iL %s -oA hostsup2_fast' % (list)
+	TCPSCAN2 = 'nmap -vv -F -iL %s -oA %shostsup2_fast' % (list, BaseFolder)
 	tcp_results2 = subprocess.check_output(TCPSCAN2, shell=True)
 	print "[+] Starting common ports scan for hosts up \n"
-	TCPSCAN3 = 'nmap -iL %s -sn -T4 -PE -PM -PP -PU53,69,123,161,500,514,520,1434 -PA21,22,23,25,53,80,389,443,513,636,8080,8443,3389,1433,3306,10000 -PS21,22,23,25,53,80,443,513,8080,8443,389,636,3389,3306,1433,10000 -n -r -vv -oA hostsup3_ports' % (
-		list)
+	TCPSCAN3 = 'nmap -iL %s -sn -T4 -PE -PM -PP -PU53,69,123,161,500,514,520,1434 -PA21,22,23,25,53,80,389,443,513,636,8080,8443,3389,1433,3306,10000 -PS21,22,23,25,53,80,443,513,8080,8443,389,636,3389,3306,1433,10000 -n -r -vv -oA %shostsup3_ports' % (list, BaseFolder)
 	# tcp_results3 = subprocess.check_output(TCPSCAN3, shell=True)
 
 	# for line in lines:
@@ -89,7 +88,7 @@ def hostsup_scans(list):  # maybe change to starter scan
 	print "[!] Finished Hostup scans"
 
 	# Parsing all hostup scans for Hosts that are UP
-	grepHostsUp = 'cat hostsup*.gnmap | grep Up | cut -d " " -f2 | sort -u'
+	grepHostsUp = 'cat %shostsup*.gnmap | grep Up | cut -d " " -f2 | sort -u' % BaseFolder
 	grepHostsUpResults = subprocess.check_output(grepHostsUp, shell=True)
 	lines = grepHostsUpResults.split("\n")
 
@@ -97,7 +96,7 @@ def hostsup_scans(list):  # maybe change to starter scan
 	lines = [x for x in lines if x]
 
 	# writing all hosts up to a file
-	allHostsUp = open('allhostsup.txt', 'a')
+	allHostsUp = open('%sallhostsup.txt' % BaseFolder, 'a' )
 	for line in lines:
 		line = line.strip()
 		allHostsUp.write("%s\n" % line)
@@ -110,10 +109,10 @@ def hostsup_scans(list):  # maybe change to starter scan
 
 	print "[!] Lauching Webports scan"
 	# launching not as multi process so we know when it finishes
-	webports('allhostsup.txt')
+	webports('%sallhostsup.txt' % BaseFolder)
 
 	# lauching EyeWitness as a seperate process due to how long it takes
-	p2 = Process(target=eyewitness, args=('webPorts_common.xml', 'webPorts_common'))
+	p2 = Process(target=eyewitness, args=('%swebPorts_common.xml' % BaseFolder, '%swebPorts_common' % BaseFolder))
 	p2.start()
 
 	print "[-] Testing if running after process ran"
@@ -257,7 +256,7 @@ def top2000(address):
 def webports(filename):
 	print "[-] Starting Common web ports scan -quick Fast One"
 	# USING THIS TO TEST PARSING SCAN RESULTS THEN SEND TO EYEWITNESS.
-	webScan = 'nmap -p 80,443,8080,8443,981,1311,2480 -iL %s -oA webPorts_common' % filename
+	webScan = 'nmap -p 80,443,8080,8443,981,1311,2480 -iL %s -oA %swebPorts_common' % (filename, BaseFolder)
 
 	webresults = scan(webScan)
 
@@ -286,7 +285,7 @@ def ftpPort(filename):
 def smbScan(filename):
 	print "[-] Starting SMB scan to run enum4Linux and smb checks"
 
-	smbScan = 'nmap -sV -Pn -vv -p 139,445 -iL %s --script=smb-enum-shares, smb-enum-users, smb-os-discovery,smb-brute --oA enum4linux' % filename
+	smbScan = 'nmap -sV -Pn -vv -p 139,445 -iL %s --script=smb-enum-shares, smb-enum-users, smb-os-discovery,smb-brute --oA %senum4linux' % (filename, BaseFolder)
 
 	enum4LinuxResults = scan(smbScan)
 
@@ -298,9 +297,9 @@ def smbScan(filename):
 def Enum4Linux(ipToScan):
 	if constants.osVersion == 'Debian':
 		Enum4LinuxPath = '/pentest/intelligence-gathering/enum4linux'
-		command = '%s/enum4linux.pl %s >> enum4_%s.ouput' % (Enum4LinuxPath, ipToScan, ipToScan)
+		command = '%s/enum4linux.pl %s >> %senum4_%s.ouput' % (Enum4LinuxPath, ipToScan, BaseFolder, ipToScan)
 	if constants.osVersion == 'Kali':
-		command = 'enum4linux %s >> enum4_%s.output' % (ipToScan, ipToScan)
+		command = 'enum4linux %s >> %senum4_%s.output' % (ipToScan, BaseFolder, ipToScan)
 
 	print  "[-] Running Enum4Linux on with: %s" % command
 	FNULL = open(os.devnull, 'w')  # Suppress enum4linux output
@@ -314,11 +313,11 @@ def eyewitness(filename, outputName):  # expecting IP addrees list
 
 	if constants.osVersion == 'Debian':
 		eyewitnessPath = '/pentest/intelligence-gathering/eyewitness'
-		command = '%s/Eyewitness.py --headless--prepend-https --no-prompt  -x %s -d %s' % (
-			eyewitnessPath, filename, outputName)
+		command = '%s/Eyewitness.py --headless--prepend-https --no-prompt  -x %s%s -d %s' % (
+			eyewitnessPath,BaseFolder, filename, outputName)
 	elif constants.osVersion == 'Kali':
 		# filename = webPorts_common.xml
-		command = 'eyewitness --web --no-prompt -x ../../../../../root/TestScript/%s' % (filename)
+		command = 'eyewitness --web --no-prompt -x ../../../../../root/TestScript/%s%s' % (BaseFolder,filename)
 	else:
 		command = "**EYE WITNESS WILL NOT RUN*"
 
@@ -353,7 +352,7 @@ def getOsVersion():
 		proc = subprocess.Popen(['lsb_release', '-d'], stdout=subprocess.PIPE)
 		out = proc.communicate()
 		osVer = out[0]
-		if "Debian" in (osVer.split("\t"))[1]:
+		if ("Debian" in (osVer.split("\t"))[1]) or ("Ubuntu" in (osVer.split("\t"))[1]):
 			constants.osVersion = "Debian"
 			print "[!] Debian\Ubuntu system detected"
 		elif "Kali" in (osVer.split("\t"))[1]:
@@ -371,84 +370,58 @@ def getOsVersion():
 ## Not anymore takes a filename as an argument now :)
 
 def BaseLineTest():
-    # Checking Running as root, for write perms
-    try:
-        checkPermissions = 'whoami'
-        checkPermissionsResults = scan(checkPermissions)
-    except Exception as e:
-        print e
+	print "++++++++++++++++++++++++++++++++"
+	print "+++RUNNING BASELINE CHECKS +++++"
+	print "+++ ROOT | Base Directory etc+++++"
+	print "++++++++++++++++++++++++++++++++\n "
+	# Checking Running as root, for write perms
+	try:
+		checkPermissions = 'whoami'
+		checkPermissionsResults = scan(checkPermissions)
+	except Exception as e:
+		print e
 
-    if 'root' in checkPermissionsResults:
-        print "====You are Root that is good! Continuing===="
-    else:
-        "You are not root, please run as root!"
-        "EXITING"
-        exit()
+	if 'root' in checkPermissionsResults:
+		print "====You are Root that is good! Continuing===="
+	else:
+		"You are not root, please run as root!"
+		"EXITING"
+		exit()
 
-    #finding full full path of script
-    checkPath = 'pwd'
-    FullPath = scan(checkPath).strip() + '/'
-    print "The Full path to be used for script is ", FullPath
+	#finding full full path of script
+	checkPath = 'pwd'
+	FullPath = scan(checkPath).strip() + '/'
+	#print "The Full path to be used for the script is ", FullPath
 
 
-    baseDir = "base"
-    # create base sub dir to place all files
-    try:
-        mkBaseDir = "mkdir %s" % baseDir
-        scan(mkBaseDir)
-    except Exception as e:
-        print e
+	baseDir = "autoReconScans"
+	# create base sub dir to place all files
+	try:
+		mkBaseDir = "mkdir %s" % baseDir
+		scan(mkBaseDir)
+	except Exception as e:
+		print e, "\n"
 
-    # check dir was created
-    checkDir = "ls | grep base"
-    checkDirDirResults = scan(checkDir)
-    if 'base' in checkDirDirResults:
-        print "BASE directory found.. continuing"
+	# check dir was created
+	try:
+		checkDir = "ls | grep %s" % baseDir
+		checkDirDirResults = scan(checkDir)
+		if baseDir in checkDirDirResults:
+			print "BASE directory found.. continuing"
+	except Exception as e:
+		print e
+	FullPath = ''.join((FullPath, baseDir)) + '/'
+	print "Full path and baseDir for script will be ", FullPath
+	return FullPath
 
-    FullPath = ''.join((FullPath, baseDir)) + '/'
-    print "Full path and baseDir for script will be ", FullPath
 
-    return FullPath
+
+
+
+
 if __name__ == '__main__':
 
-	BaseLineTest()
-
-
-	# try:
-	# 	checkPermissions = 'whoami'
-	# 	checkPermissionsResults = scan(checkPermissions)
-	# except Exception as e:
-	# 	print e
-    #
-	# if 'root' in checkPermissionsResults:
-	# 	print "====You are Root that is good! Continuing===="
-	# else:
-	# 	"You are not root, please run as root!"
-	# 	"EXITING"
-	# 	exit()
-    #
-    #
-	# #print checkPermissionsResults
-	# #finding full full path of script
-	# checkPath = 'pwd'
-	# FullPath = scan(checkPath).strip() + '/'
-	# print "The Full path to be used for script is ", FullPath
-    #
-	# baseDir = "base"
-	# FullPath = ''.join((FullPath,baseDir)) + '/'
-	# print "Full path and baseDir ", FullPath
-    #
-	# # create base sub dir to place all files
-	# try:
-	# 	mkBaseDir = "mkdir %s" % baseDir
-	# 	scan(mkBaseDir)
-	# except Exception as e:
-	# 	print e
-	# #check dir was created
-	# checkDir = "ls | grep base"
-	# checkDirDirResults = scan(checkDir)
-	# if 'base' in checkDirDirResults:
-	# 	print "BASE directory found.. continuing"
+	BaseFolder = BaseLineTest()
 
 	# open file'
 
@@ -461,8 +434,10 @@ if __name__ == '__main__':
 	# else:
 	#     textfile = sys.argv[1]
 
-	# if "Kali" == getOsVersion():
-	#   checkKaliApps()
+	getOsVersion()
+
+	if "Kali" == getOsVersion():
+	   checkKaliApps()
 
 	textfile = "IP.txt"
 	f = open(textfile, 'r')
@@ -483,6 +458,7 @@ if __name__ == '__main__':
 		IPListClean.append(IPList[total].strip('\n'))
 		total = total + 1
 
+	"""====FIRST SCANS TO RUN===="""
 	p2 = Process(target=hostsup_scans, args=(textfile,))
 	p2.start()
 
@@ -494,10 +470,10 @@ if __name__ == '__main__':
 
 	"""Creates blank files ready to write into"""
 	# Acts as a blank file, when script is restarted
-	open('quick_hosts_ports.txt', 'w').close()
-	open('allhostsup.txt', 'w').close()
-	open('webports.txt', 'w').close()
-	open('testinghosts.txt', 'w').close()
+	open('%squick_hosts_ports.txt' % BaseFolder, 'w').close()
+	open('%sallhostsup.txt' % BaseFolder, 'w').close()
+	open('%swebports.txt' % BaseFolder,  'w').close()
+	open('%s testinghosts.txt' %BaseFolder, 'w').close()
 
 	for IP in IPListClean:
 		print"\t[*] IPs ", IP
@@ -506,11 +482,11 @@ if __name__ == '__main__':
 
 	# p.start()
 	ports = [22, 8888]
-	p1 = Process(target=portSelection, args=('testing.gnmap', ports, 'testinghosts.txt'))
-	p1.start()
+	#p1 = Process(target=portSelection, args=('testing.gnmap', ports, 'testinghosts.txt'))
+	#p1.start()
 	# eyewitness('webports.txt')
-	# p2 = Process(target=nmapScan, args=(IP,))
-	# p2.start()
+	#p2 = Process(target=nmapScan, args=(IP,))
+	#p2.start()
 
 	# Start enum4linux threads
 	# enum4linux scans 1 ip at a time, hence the loop
