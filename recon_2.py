@@ -112,12 +112,12 @@ def hostsup_scans(list):  # maybe change to starter scan
     webports('%sallhostsup.txt' % BaseFolder)
 
     # lauching EyeWitness as a seperate process due to how long it takes
-    p2 = Process(target=eyewitness, args=('%swebPorts_common.xml' % BaseFolder, '%swebPorts_common' % BaseFolder))
-    p2.start()
+    #p2 = Process(target=eyewitness, args=('%swebPorts_common.xml' % BaseFolder, '%swebPorts_common' % BaseFolder))
+    #p2.start()
 
-    print "[-] Testing if running after process ran"
-    total = 0
-    IPListClean = []
+    #print "[-] Testing if running after process ran"
+    # total = 0
+    # IPListClean = []
 
 
 # for IP in lines:
@@ -217,7 +217,9 @@ def portSelection(filename, portsList, outputFile, type):
             fileWriting.close()
             return True
     else:
-        print "NO PORTS OPEN ON %s PORTS" % portsList
+        #strPortsList = ""
+            #strPortsList.append(x)
+        print "NO PORTS OPEN ON %s PORTS" % portsList[1:-1]
         return False
 
 def parseScanResults(results, filename, address):
@@ -284,6 +286,8 @@ def webports(filename):
         print "Web Ports were identified, running EyeWitness"
 
         #to add Eye Witness here
+        eyewitness('%shosts_webports.txt' % BaseFolder, '%sEW_web' % BaseFolder)
+
     else:
         print "no web ports found"
 
@@ -338,15 +342,17 @@ def eyewitness(filename, outputName):  # expecting IP addrees list
 
     if constants.osVersion == 'Debian':
         eyewitnessPath = '/pentest/intelligence-gathering/eyewitness'
-        command = '%s/Eyewitness.py --headless--prepend-https --no-prompt  -x %s%s -d %s' % (
-            eyewitnessPath,BaseFolder, filename, outputName)
+        command = '%s/EyeWitness.py --headless --prepend-https --prepend-http --no-prompt  -x %s -d %s' % (
+            eyewitnessPath, filename, outputName)
+        print  "[!] Running EyeWitness with: ", command
     elif constants.osVersion == 'Kali':
         # filename = webPorts_common.xml
-        command = 'eyewitness --web --no-prompt -x ../../../../../root/TestScript/%s%s' % (BaseFolder,filename)
+        command = 'eyewitness --web --no-prompt -x ../../../../../root/TestScript/%s%s' % (filename)
+        print  "[!] Running EyeWitness with: ", command
     else:
         command = "**EYE WITNESS WILL NOT RUN*"
 
-    print  "[!] Running EyeWitness with: ", command
+
 
     FNULL = open(os.devnull, 'w')  # Suppress eyewitness output
     subprocess.Popen(command, stdout=FNULL, stderr=subprocess.STDOUT, shell=True).wait()
@@ -506,7 +512,7 @@ if __name__ == '__main__':
     # p = Process(target=quicknmapScan, args=(IP,))
 
     # p.start()
-    ports = [22, 8888]
+    #ports = [22, 8888]
     #p1 = Process(target=portSelection, args=('testing.gnmap', ports, 'testinghosts.txt'))
     #p1.start()
     # eyewitness('webports.txt')
