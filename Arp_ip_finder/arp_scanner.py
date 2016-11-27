@@ -2,7 +2,7 @@
 
 import time
 from scapy.all import *
-
+import baseTest
 
 def scan(command):
 	launchresults = subprocess.check_output(command, shell=True)
@@ -100,7 +100,7 @@ def get_ip_address(ifname):
 
 if __name__ == '__main__':
 	"""====START OF MAIN ====="""
-
+	FullPath = baseTest.BaseLineTest("ArpHosts")
 
 	print "++++ This Script will identify IP addresses from ARP PACKETS ++++"
 	print "++++ and it will run an ArpPing Scan to be more acive        ++++"
@@ -109,7 +109,7 @@ if __name__ == '__main__':
 
 	Interface = raw_input("Please enter the interface name> ")
 
-	seconds = int(raw_input("Please enter the amount of seconds to Sniff ARP packerts for"
+	seconds = int(raw_input("Please enter the amount of seconds to Sniff ARP packets for"
 				  "> "))
 
 
@@ -131,7 +131,8 @@ if __name__ == '__main__':
 	bpf = 'arp'
 	outPutFile = 'ArpHosts.txt'
 	IPlist = []
-	FullPath = BaseLineTest()
+	#FullPath = BaseLineTest()
+
 	time.sleep(2)
 
 	print "\n\n\n====starting Sniffer====="
