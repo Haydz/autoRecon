@@ -21,17 +21,11 @@ import os, sys, threading
 import subprocess
 import time
 import baseTest
+import argparse
 
 # import nmap
 
 """
- this is a major work in progress
- IDEA: Using TCP dump to monitor for Arp Packets, collate IP address from ARP packets, then direct scan hosts.
- TO DO:
- Save files in separate directory using user input
- Add excluding own IP address
- ifconfig
- nmap 192.168.0.* --exclude 192.168.0.100
 
  further functionality
  https://hackertarget.com/7-nmap-nse-scripts-recon/
@@ -51,11 +45,30 @@ import baseTest
  6) connect all various NSE scripts up
  7) ftp scan - log in for anonymous, output success anonmyous logins
  8) snmp scans - private, community strings
+
+
+
+ to mix in:
+  discovery scan against a file of subnets
+   default nmap with services (-sV) against up hosts, then full port scan with services against all up hosts (yes that will take a long time)
+eyewitness stuff is cool. you should pull out what nmap returned as a www and pass those per scan
 """
 
 
 class constants:
     oVersion = "unknown"
+
+def exhaustive():
+    print "[!] Lauching Webports scan"
+    # launching not as multi process so we know when it finishes
+    #CHANGE INTO MULTI PROCESSING
+    webports('%sallhostsup.txt' % BaseFolder)
+    print "[!] Lauching SMBports scan"
+    smbScan ('%sallhostsup.txt' % BaseFolder)
+    for x in open('%sallhostsup.txt' % BaseFolder, 'r'):
+        p4 = Process(target=allPort, args=(x,))
+        p4.start()
+
 
 
 ###### FUNCTIONS BELOW #####
@@ -69,23 +82,26 @@ def multProc(targetin, scanip, port):
 
 
 def hostsup_scans(list):  # maybe change to starter scan
+    open('%sallhostsup.txt' % BaseFolder, 'w').close() #creating empty file each time function is run
+
+
     print "\n"
     print "++++++++++++++++++++++++++++++++++"
-    print "++++ Running Inital Main Scan ++++"
+    print "++++ Running Initial Main Scan ++++"
     print "++++++++++++++++++++++++++++++++++"
-    print"[+] Starting -sn scan for hosts up"
+    print"[+] Starting -sN scan for hosts up - Ping scan"
     # tcpNameScan = 'nmap_%s_' % address\
     # print "File name is: %s" %(list)
-    TCPSCAN = 'nmap -vv -sN -iL %s -oA %shostsup1_sn' % (list, BaseFolder)
+    TCPSCAN = 'nmap -vv -sn -iL %s -oA %shostsup1_sn' % (list, BaseFolder)
     # tcp_results = scan(TCPSCAN)
     # print tcp_results
     # tcp_results = subprocess.check_output(TCPSCAN, shell=True)
-    print "[+] Starting -F scan for hosts up "
+    print "[+] Starting -F scan for hosts up - Fast scan "
     TCPSCAN2 = 'nmap -vv -F -iL %s -oA %shostsup2_fast' % (list, BaseFolder)
     tcp_results2 = subprocess.check_output(TCPSCAN2, shell=True)
-    print "[+] Starting common ports scan for hosts up"
-    TCPSCAN3 = 'nmap -iL %s -sn -T4 -PE -PM -PP -PU53,69,123,161,500,514,520,1434 -PA21,22,23,25,53,80,389,443,513,636,8080,8443,3389,1433,3306,10000 -PS21,22,23,25,53,80,443,513,8080,8443,389,636,3389,3306,1433,10000 -n -r -vv -oA %shostsup3_ports' % (list, BaseFolder)
-    # tcp_results3 = subprocess.check_output(TCPSCAN3, shell=True)
+    print "[+] Starting common ports scan for hosts up - TCP and UDP"
+
+
     print "[!] Finished Hostup scans\n"
 
     # Parsing all hostup scans for Hosts that are UP
@@ -104,56 +120,84 @@ def hostsup_scans(list):  # maybe change to starter scan
     allHostsUp.close()
 
 
+    for x in open('%sallhostsup.txt' % BaseFolder, 'r'):
+        quicknmapScan(x)
+
+    if exhaustive_scan == True:
+        exhaustive()
+
+
+
+
 #need to trouble shoot this
     # if there are web ports we do eyewitness scan
     # if no web ports we do not run
 
-    print "[!] Lauching Webports scan"
-    # launching not as multi process so we know when it finishes
-    webports('%sallhostsup.txt' % BaseFolder)
-
-# generic nmap scan top 1000 ports
-def quicknmapScan(address):
+def allPort(address):
+    #CHANGE TO top 2000
+    open('%sall_ports_allhosts.txt' % BaseFolder, 'w').close() # creating empty file each time its run
+    address = address.strip("\n")
     # print address
     serv_dict = {}
-    # nm = nmap.PortScanner()
-    print "[+] Starting top 1000 tcp ports scan for ", address
-    tcpNameScan = 'nmap_%s_quick' % address
+    print "[+] Starting top 2000 tcp ports scan for ", address
+    tcpNameScan = 'nmap_%s_allports' % address
     # top one thousand ports
-    TCPSCAN = 'nmap -vv --top-ports 1000  %s -oA %s_quick' % (address, tcpNameScan)
+    TCPSCAN = 'nmap -vv -p1-65535  %s -oA %s%s' % (address, BaseFolder, tcpNameScan)
+    print  "[!] Running scan: ",  TCPSCAN
     tcp_results = subprocess.check_output(TCPSCAN, shell=True)
 
+    parseOutputName = '%sall_ports.txt' % BaseFolder
+    parseScanResults(tcp_results,parseOutputName, address)
+# generic nmap scan top 1000 ports
+def quicknmapScan(address):
+    #CHANGE TO top 2000
+    open('%squick_hosts_ports.txt' % BaseFolder, 'w').close() # creating empty file each time its run
+    address = address.strip("\n")
+    # print address
+    serv_dict = {}
+    print "[+] Starting top 2000 tcp ports scan for ", address
+    tcpNameScan = 'nmap_%s_quick' % address
+    # top one thousand ports
+    TCPSCAN = 'nmap -vv --top-ports 1000  %s -oA %s%s' % (address, BaseFolder, tcpNameScan)
+    print  "[!] Running scan: ",  TCPSCAN
+    tcp_results = subprocess.check_output(TCPSCAN, shell=True)
+
+    parseOutputName = '%squick_hosts_ports.txt' % BaseFolder
+    parseScanResults(tcp_results, parseOutputName, address)
+
     # fullName = "%s_quick.xml" % tcpNameScan
-    print "[-] Gathering ports and services for %s" % address
-
-    lines = tcp_results.split("\n")
-
-    for line in lines:
-        ports = []
-        line = line.strip()
-        if ("tcp" in line) and ("open" in line) and not ("Discovered" in line):
-            # print line
-            while "  " in line:
-                line = line.replace("  ", " ");
-            linesplit = line.split(" ")
-
-            service = linesplit[2]  # grabs service
-            # print "service is"
-            # print service
-
-            port = line.split(" ")[0]
-            # print "port is"
-            port = line.split("/")[0]  # remove protocol from pEyort: 80/tcp
-            # print port
-            if service in serv_dict:
-                ports = serv_dict[service]
-            serv_dict[service] = ports
-            # print test_dict['port']
-            ports.append(port)
-
-            qhp = open('quick_hosts_ports.txt', 'a')
-            qhp.write("%s:%s:%s\n" % (address, port, service))
-            qhp.close()
+    # print "[-] Gathering ports and services for %s" % address
+    #
+    # lines = tcp_results.split("\n")
+    #
+    # for line in lines:
+    #     ports = []
+    #     line = line.strip()
+    #     if ("tcp" in line) and ("open" in line) and not ("Discovered" in line):
+    #         # print line
+    #         while "  " in line:
+    #             line = line.replace("  ", " ");
+    #         linesplit = line.split(" ")
+    #
+    #         service = linesplit[2]  # grabs service
+    #         # print "service is"
+    #         # print service
+    #
+    #         port = line.split(" ")[0]
+    #         # print "port is"
+    #         port = line.split("/")[0]  # remove protocol from pEyort: 80/tcp
+    #         print "Found Host %s with %s Port Open" % (address, port)
+    #         # print port
+    #         if service in serv_dict:
+    #             ports = serv_dict[service]
+    #         serv_dict[service] = ports
+    #         # print test_dict['port']
+    #         ports.append(port)
+    #
+    #         qhp = open('quick_hosts_ports.txt', 'a')
+    #
+    #         qhp.write("%s:%s:%s\n" % (address, port, service))
+    #         qhp.close()
 
 
 def scan(command):
@@ -224,6 +268,7 @@ def parseScanResults(results, filename, address):
             port = line.split(" ")[0]
             # print "port is"
             port = line.split("/")[0]  # remove protocol from pEyort: 80/tcp
+            print "Found Host %s with %s Port Open" % (address, port)
             # print port
             # if service in serv_dict:
             #	 ports = serv_dict[service]
@@ -236,10 +281,6 @@ def parseScanResults(results, filename, address):
             qhp.write("%s:%s:%s\n" % (address, port, service))
             qhp.close()
 
-
-def top2000(address):
-    serv_dict = {}
-    print"[+] Starting top 2000 ports scan", address
 
 
 def webports(filename):
@@ -447,6 +488,10 @@ if __name__ == '__main__':
     ## Not anymore takes a filename as an argument now :)
 
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--exhaustive", help="Runs all Exhaustive scans", action="store_true")
+    args = parser.parse_args()
+
     BaseFolder = baseTest.BaseLineTest('autoReconScans')
     #baseTest.BaseLineTest()
     # open file'
@@ -459,6 +504,17 @@ if __name__ == '__main__':
     #     print sys.exit()
     # else:
     #     textfile = sys.argv[1]
+
+    exhaustive_scan = False
+    if args.exhaustive:
+        print "+++++++++++++++++++++++++++"
+        print "Exhaustive Scans will Run"
+        print "[-] SMB to5 Enum4Linux"
+        print "[-] WebPorts to EyeWitness"
+        print "[-] All 65535 port Scan"
+        print "+++++++++++++++++++++++++++"
+        time.sleep(3)
+        exhaustive_scan = True
     textfile = "IP.txt"
 
     #getOsVersion()
@@ -486,10 +542,22 @@ if __name__ == '__main__':
         print"\t[*] IPs ", IP
 
     """====FIRST SCAN TO RUN===="""
+
+    #p2 = Process(target=smbScan, args=(textfile,))
+    #p2.start()
+
+    TCPSCAN3 = 'nmap -iL %s -sn -T4 -PE -PM -PP -PU53,69,123,161,500,514,520,1434 -PA21,22,23,25,53,80,389,443,513,636,8080,8443,3389,1433,3306,10000 -PS21,22,23,25,53,80,443,513,8080,8443,389,636,3389,3306,1433,10000 -n -r -vv -oA %shostsup3_ports' % (textfile, BaseFolder)
+    scan(TCPSCAN3)
+
+    for x in range(0,5):
+        print "[!]First Hosts up Scan finished, Check %shostsup3_ports.nmap" %BaseFolder
+
     p1 = Process(target=hostsup_scans, args=(textfile,))
     p1.start()
-    p2 = Process(target=smbScan, args=(textfile,))
-    p2.start()
+    #res = Pool().amap(scan(TCPSCAN3))
+
+
+    # tcp_results3 = subprocess.check_output(TCPSCAN3, shell=True)
 
     # p = Process(target=quicknmapScan, args=(IP,))
 
@@ -503,8 +571,8 @@ if __name__ == '__main__':
 
     """Creates blank files ready to write into"""
     # Acts as a blank file, when script is restarted
-    open('%squick_hosts_ports.txt' % BaseFolder, 'w').close()
-    open('%sallhostsup.txt' % BaseFolder, 'w').close()
+
+
     open('%swebports.txt' % BaseFolder,  'w').close()
     open('%s testinghosts.txt' %BaseFolder, 'w').close()
     f.close()
