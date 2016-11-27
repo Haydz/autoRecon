@@ -20,6 +20,7 @@ import os, sys, threading
 # importing to allow the script to connect to input and out put pipes, such as out put from nmap scans
 import subprocess
 import time
+import baseTest
 
 # import nmap
 
@@ -68,30 +69,29 @@ def multProc(targetin, scanip, port):
 
 
 def hostsup_scans(list):  # maybe change to starter scan
-    print"[+] Starting -sn scan for hosts up \n"
+    print "\n"
+    print "++++++++++++++++++++++++++++++++++"
+    print "++++ Running Inital Main Scan ++++"
+    print "++++++++++++++++++++++++++++++++++"
+    print"[+] Starting -sn scan for hosts up"
     # tcpNameScan = 'nmap_%s_' % address\
     # print "File name is: %s" %(list)
     TCPSCAN = 'nmap -vv -sN -iL %s -oA %shostsup1_sn' % (list, BaseFolder)
     # tcp_results = scan(TCPSCAN)
     # print tcp_results
     # tcp_results = subprocess.check_output(TCPSCAN, shell=True)
-    print "[+] Starting -F scan for hosts up \n"
+    print "[+] Starting -F scan for hosts up "
     TCPSCAN2 = 'nmap -vv -F -iL %s -oA %shostsup2_fast' % (list, BaseFolder)
     tcp_results2 = subprocess.check_output(TCPSCAN2, shell=True)
-    print "[+] Starting common ports scan for hosts up \n"
+    print "[+] Starting common ports scan for hosts up"
     TCPSCAN3 = 'nmap -iL %s -sn -T4 -PE -PM -PP -PU53,69,123,161,500,514,520,1434 -PA21,22,23,25,53,80,389,443,513,636,8080,8443,3389,1433,3306,10000 -PS21,22,23,25,53,80,443,513,8080,8443,389,636,3389,3306,1433,10000 -n -r -vv -oA %shostsup3_ports' % (list, BaseFolder)
     # tcp_results3 = subprocess.check_output(TCPSCAN3, shell=True)
-
-    # for line in lines:
-    #	if ("against" in line) and not ("no-response" in line):
-    #		print line
-    print "[!] Finished Hostup scans"
+    print "[!] Finished Hostup scans\n"
 
     # Parsing all hostup scans for Hosts that are UP
     grepHostsUp = 'cat %shostsup*.gnmap | grep Up | cut -d " " -f2 | sort -u' % BaseFolder
     grepHostsUpResults = subprocess.check_output(grepHostsUp, shell=True)
-    lines = grepHostsUpResults.split("\n")
-
+    lines = grepHostsUpResults.split(" ")
     # removing any list items that are blank
     lines = [x for x in lines if x]
 
@@ -99,6 +99,7 @@ def hostsup_scans(list):  # maybe change to starter scan
     allHostsUp = open('%sallhostsup.txt' % BaseFolder, 'a' )
     for line in lines:
         line = line.strip()
+        print "[!] HOST %s Found UP\n" % line
         allHostsUp.write("%s\n" % line)
     allHostsUp.close()
 
@@ -110,23 +111,6 @@ def hostsup_scans(list):  # maybe change to starter scan
     print "[!] Lauching Webports scan"
     # launching not as multi process so we know when it finishes
     webports('%sallhostsup.txt' % BaseFolder)
-
-    # lauching EyeWitness as a seperate process due to how long it takes
-    #p2 = Process(target=eyewitness, args=('%swebPorts_common.xml' % BaseFolder, '%swebPorts_common' % BaseFolder))
-    #p2.start()
-
-    #print "[-] Testing if running after process ran"
-    # total = 0
-    # IPListClean = []
-
-
-# for IP in lines:
-#	 print "IP:", IP
-#	 IPListClean.append(IPList[total].strip('\n'))
-#	 total = total + 1
-# for IP in IPListClean:
-#	 p = Process(target=quicknmapScan, args=(IP,))
-#	 p.start()
 
 # generic nmap scan top 1000 ports
 def quicknmapScan(address):
@@ -179,43 +163,39 @@ def scan(command):
 
 def portSelection(filename, portsList, outputFile, type):
     placeholder = []
-    print "=====PORT SELECTION Execution running==="
+    print "\n=====PORT SELECTION Execution running==="
     print "File selected: ", filename
     print "Running Port Selection on ports:", (str(portsList))[1:-1]
     for port in portsList:
-        # print x
         # Grep and cutting hosts for respective potrs
-        grepHostsUp = 'cat %s  | grep %s/open | cut -d " " -f2 | sort -u' % (filename, port)
-        print 'grepHostsUp command being run: %s' % grepHostsUp
-        grepHostsUpResults = subprocess.check_output(grepHostsUp, shell=True)
-        lines = grepHostsUpResults.split("\n")
+        grepPortOpen = 'cat %s  | grep %s/open | cut -d " " -f2 | sort -u' % (filename, port)
+        print 'Grep command being run: %s' % grepPortOpen
+        grepPortOpenResults = subprocess.check_output(grepPortOpen, shell=True)
+        lines = grepPortOpenResults.split("\n")
 
         # removing any list items that are blank
-        lines = [x for x in lines if x]
-        #print lines
+        lines = [x for x in lines if x] # ip addresses
 
+
+        #print lines
+        #raw_input("PAUSE")
         for x in lines:
                 #prevents IP address being written twice
             if x not in placeholder:
                 placeholder.append(x+":"+str(port))
         # writing hosts with correct ports to a file
-        #print "PLACEHOLDER",placeholder
-    outputFile = BaseFolder + outputFile
-
-    A = 'yes'
-    B = 'no'
-
-    open(outputFile, 'w').close()
-    if placeholder:
-        print "Hosts found with %s ports, writing to file" % type
+    outputFile = BaseFolder + outputFile #place to save hosts  with SMB ports open
+    print "\n"  # to add space"
+    open(outputFile, 'w').close() #creating Empty File
+    if placeholder: # if placeholder has IPS
+        print "[!] Hosts found with %s ports, writing to file" % type
         fileWriting = open(outputFile, 'a')
         for line in placeholder:
-
             print "Writing %s to file" % line
-            line = line.strip()
+            line = line.strip() #writing IP addresses to a file
             fileWriting.write("%s\n" % line)
-            fileWriting.close()
-            return True
+        fileWriting.close()
+        return True # returns true so that we can have another function run (such as EyeWitness)
     else:
         #strPortsList = ""
             #strPortsList.append(x)
@@ -262,31 +242,26 @@ def top2000(address):
     print"[+] Starting top 2000 ports scan", address
 
 
-# STILL TO DO
-
-
 def webports(filename):
+
     #filename = BaseFolder + filename
     print "[-] Starting Common web ports scan -quick Fast One"
     # USING THIS TO TEST PARSING SCAN RESULTS THEN SEND TO EYEWITNESS.
-
-    webScan = 'nmap -p 80,443,8080,8443,981,1311,2480 -iL %s -oA %swebPorts_common' % (filename, BaseFolder)
-    print webScan
+    portList = [80, 443, 8080, 8443, 9821, 1311, 2480]
+    webScan = 'nmap -p %s -iL %s -oA %swebPorts_common' % (str(portList)[1:-1], filename, BaseFolder)
+    #print webScan
     webresults = scan(webScan)
 
 
-
-
-    portList = [80,443,8080,8443,9821,1311,2480]
     OutputFile = 'hosts_webports.txt'
     type = 'common web '
     test = portSelection('%swebPorts_common.gnmap' % BaseFolder, portList, OutputFile, type)
 
     if test == True:
-        print "Web Ports were identified, running EyeWitness"
+        print "[!] Web Ports were identified, running EyeWitness"
 
         #to add Eye Witness here
-        eyewitness('%shosts_webports.txt' % BaseFolder, '%sEW_web' % BaseFolder)
+        eyewitness('%shosts_webports.txt' % BaseFolder, 'EW_web_common')
 
     else:
         print "no web ports found"
@@ -296,7 +271,7 @@ def webports(filename):
 # parseScanResults(testresults, 'webports.txt',address)
 
 def ftpPort(filename):
-    print "[-] Starting FTP scan, checks anonymous"
+    print "[-] Starting FTP scan, checks anonymous login"
     ftpScan = 'nmap -sV -Pn -vv -p 21 -iL %s --script=banner,ftp-anon --oA %sftpPorts' % (filename,BaseFolder)
 
     #ftpResults = scan(ftpScan)
@@ -305,32 +280,39 @@ def ftpPort(filename):
 """ GREP AND CUTTING FOR FTP ANONYMOUS
  root@traversal-lap:~/PycharmProjects/autoRecon/base# cat ftpPorts.nmap  | grep -B 8 230 | grep "Nmap scan report" | cut -d " " -f 5
 192.168.56.102
-
-
  """
 
 # need to add parsing the file for anonymous access.
 
 def smbScan(filename):
     print "[-] Starting SMB scan to run enum4Linux and smb checks"
+    name = 'enum4linux'
+    portList = [139,445]
+    smbScan = 'nmap -sV -Pn -vv -p %s -iL %s  --oA %s%s' % (str(portList)[1:-1], filename, BaseFolder, name)
+    #--script=smb-enum-shares,smb-enum-users,smb-os-discovery,smb-brute
+    scan(smbScan)
+    type1 = 'Enum4Linux'
+    OutputFile = 'hosts_smbports.txt'
+    test = portSelection('%s%s.gnmap' % (BaseFolder,name), portList, OutputFile, type1)
 
-    smbScan = 'nmap -sV -Pn -vv -p 139,445 -iL %s --script=smb-enum-shares, smb-enum-users, smb-os-discovery,smb-brute --oA %senum4linux' % (filename, BaseFolder)
+    smbhostsfile = BaseFolder+OutputFile
+    if test == True:
+        print "[!] SMB Ports were identified, running EyeWitness"
+        for x in open(smbhostsfile, 'r'):
+            Enum4Linux(x.split(":")[0])
+    else:
+        print "[!]No SMB ports found"
+        print "[!] Not running Enum4Linux"
 
-    enum4LinuxResults = scan(smbScan)
-
-
-
-# to grep correct portscat 	test | grep	22 / open | cut - d 	" " - f2
-#  need to add parsing the file for smb results, then add function for ENUM4Linux.
 
 def Enum4Linux(ipToScan):
     if constants.osVersion == 'Debian':
         Enum4LinuxPath = '/pentest/intelligence-gathering/enum4linux'
-        command = '%s/enum4linux.pl %s >> %senum4_%s.ouput' % (Enum4LinuxPath, ipToScan, BaseFolder, ipToScan)
+        command = '%s/enum4linux.pl %s >> %senum4_%s.output' % (Enum4LinuxPath, ipToScan, BaseFolder, ipToScan)
     if constants.osVersion == 'Kali':
         command = 'enum4linux %s >> %senum4_%s.output' % (ipToScan, BaseFolder, ipToScan)
 
-    print  "[-] Running Enum4Linux on with: %s" % command
+    print  "[-] Running Enum4Linux with: %s" % command
     FNULL = open(os.devnull, 'w')  # Suppress enum4linux output
     subprocess.Popen(command, stdout=FNULL, stderr=subprocess.STDOUT, shell=True).wait()
     FNULL.close()
@@ -339,27 +321,38 @@ def Enum4Linux(ipToScan):
 def eyewitness(filename, outputName):  # expecting IP addrees list
     print "[-] Starting Eye Witness scan"
     # this requires editing the Eyewitness.py to use /bin/phantomjs
-
+    checkDir = ""
     if constants.osVersion == 'Debian':
-        eyewitnessPath = '/pentest/intelligence-gathering/eyewitness'
-        command = '%s/EyeWitness.py --headless --prepend-https --prepend-http --no-prompt  -x %s -d %s' % (
-            eyewitnessPath, filename, outputName)
+        try:
+            checkDir = scan('ls %s | grep %s' % (BaseFolder, outputName))
+        except Exception as e:
+            print e
+            pass
+        #this removes the directory if already created. This prevents Eyewitness from not working
+        #EyeWitness will not run if the directory is already created * asks for overwrite*
+        if checkDir != "":
+            if checkDir.strip("\n") == outputName:
+                print "[!] Found Directory %s, removing so EyeWitness can create" % outputName
+                scan('rm -rf %s%s' %(BaseFolder, outputName))
+                # raw_input("PAUSE")
+        else:
+            print "%s directory not found, EyeWitness will create it." % outputName
+        eyewitnessPath = '/pentest/intelligence-gathering/eyewitness' #using PTF base directory for eyewitness
+        command = '%s/EyeWitness.py --headless --prepend-https --prepend-http --no-prompt  -x %s -d %s%s' % (
+            eyewitnessPath, filename, BaseFolder, outputName)
         print  "[!] Running EyeWitness with: ", command
     elif constants.osVersion == 'Kali':
         # filename = webPorts_common.xml
         command = 'eyewitness --web --no-prompt -x ../../../../../root/TestScript/%s%s' % (filename)
-        print  "[!] Running EyeWitness with: ", command
+        print "[!] Running EyeWitness with: ", command
     else:
         command = "**EYE WITNESS WILL NOT RUN*"
-
-
-
     FNULL = open(os.devnull, 'w')  # Suppress eyewitness output
     subprocess.Popen(command, stdout=FNULL, stderr=subprocess.STDOUT, shell=True).wait()
     FNULL.close()
-
     print "[!] EyeWitness web ports scan finished"
     print "[-] Located in the %s Directory" % outputName
+    print "[-] Full path == %s %s" %(BaseFolder, outputName)
 
 
 def checkKaliApps():
@@ -397,8 +390,6 @@ def getOsVersion():
     return constants.osVersion
 
 
-# this is the start of the script, taking the IP addresses from a text file called IP.txt
-## Not anymore takes a filename as an argument now :)
 
 def BaseLineTest():
     print "++++++++++++++++++++++++++++++++"
@@ -452,8 +443,12 @@ def BaseLineTest():
 
 if __name__ == '__main__':
 
-    BaseFolder = BaseLineTest()
+    # this is the start of the script, taking the IP addresses from a text file called IP.txt
+    ## Not anymore takes a filename as an argument now :)
 
+
+    BaseFolder = baseTest.BaseLineTest('autoReconScans')
+    #baseTest.BaseLineTest()
     # open file'
 
     # === Commented out for easy testing ==#
@@ -464,60 +459,39 @@ if __name__ == '__main__':
     #     print sys.exit()
     # else:
     #     textfile = sys.argv[1]
+    textfile = "IP.txt"
 
-    getOsVersion()
+    #getOsVersion()
+    print "\n" # adding space
 
     if "Kali" == getOsVersion():
        checkKaliApps()
-
-    textfile = "IP.txt"
-    f = open(textfile, 'r')
+    f = open(textfile, 'r') #opening file with IP addresses
     print"[-] Opening file with IP addresses..."
-    #
-    # WList = f.read()
-    IPList = []
+    IPList = [] #blank array to hold IP addresses from file
     total = 0
     for IP in f:
-        IPList.append(IP)
-        total = total + 1
-
+        IPList.append(IP) # appending IP addresses to list
+        total = total + 1 #Counting number of IP addresses included
     print"[+] Total Number of IPs: %s" % total
-    IPListClean = []
+    IPListClean = []# array to hold stripped IPs
     total = 0
-
     for IP in IPList:
-        IPListClean.append(IPList[total].strip('\n'))
-        total = total + 1
-
-    """====FIRST SCANS TO RUN===="""
-    p2 = Process(target=hostsup_scans, args=(textfile,))
-    p2.start()
-
+        IPListClean.append(IPList[total].strip('\n')) #stripping end line from IP addresses
+        total += 1
     # p3 = Process(target=scan, args=(launchresults,))
-
-
     # p3.start()
-
-
-    """Creates blank files ready to write into"""
-    # Acts as a blank file, when script is restarted
-    open('%squick_hosts_ports.txt' % BaseFolder, 'w').close()
-    open('%sallhostsup.txt' % BaseFolder, 'w').close()
-    open('%swebports.txt' % BaseFolder,  'w').close()
-    open('%s testinghosts.txt' %BaseFolder, 'w').close()
 
     for IP in IPListClean:
         print"\t[*] IPs ", IP
-    # p = Process(target=webports, args=(IP,))
-    # p = Process(target=quicknmapScan, args=(IP,))
 
-    # p.start()
-    #ports = [22, 8888]
-    #p1 = Process(target=portSelection, args=('testing.gnmap', ports, 'testinghosts.txt'))
-    #p1.start()
-    # eyewitness('webports.txt')
-    #p2 = Process(target=nmapScan, args=(IP,))
-    #p2.start()
+    """====FIRST SCAN TO RUN===="""
+    p1 = Process(target=hostsup_scans, args=(textfile,))
+    p1.start()
+    p2 = Process(target=smbScan, args=(textfile,))
+    p2.start()
+
+    # p = Process(target=quicknmapScan, args=(IP,))
 
     # Start enum4linux threads
     # enum4linux scans 1 ip at a time, hence the loop
@@ -527,4 +501,10 @@ if __name__ == '__main__':
     #     enumThread.daemon = True
     #     enumThread.start()
 
+    """Creates blank files ready to write into"""
+    # Acts as a blank file, when script is restarted
+    open('%squick_hosts_ports.txt' % BaseFolder, 'w').close()
+    open('%sallhostsup.txt' % BaseFolder, 'w').close()
+    open('%swebports.txt' % BaseFolder,  'w').close()
+    open('%s testinghosts.txt' %BaseFolder, 'w').close()
     f.close()
