@@ -44,6 +44,8 @@ import argparse
  6) connect all various NSE scripts up
  7) ftp scan - log in for anonymous, output success anonmyous logins - Partly
  8) snmp scans - private, community strings
+ 9) Nikto
+ 19 )dirbuster
 
 
 
