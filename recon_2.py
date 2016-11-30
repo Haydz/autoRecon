@@ -32,17 +32,17 @@ import argparse
  This project is focused on intelligence automation from Nmap scans.
  IT currently does the following:
 
- 1) Fast Nmap Scan to find hosts up
- 2) TOP 1000 PORTS TCP scan
- 3) Scan for common web ports
- 4) Run Eye Witness on common web ports (in progress)
+ 1) Fast Nmap Scan to find hosts up - Done
+ 2) TOP 1000 PORTS TCP scan - Done changed to 2K
+ 3) Scan for common web ports - Done
+ 4) Run Eye Witness on common web ports - Done
  """
 
 """
  Yet to do:
  5) Enum4linux *done loneferret*
  6) connect all various NSE scripts up
- 7) ftp scan - log in for anonymous, output success anonmyous logins
+ 7) ftp scan - log in for anonymous, output success anonmyous logins - Partly
  8) snmp scans - private, community strings
 
 
@@ -495,7 +495,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print " This Tool uses Kali Linux and Pentesters Framework as a Foundation"
+    print "AUTORECON - **IN DEVELOPMENT**
+    print "by - @haydnjohnson, contributers - @loneferret"
+    print "This Tool uses Kali Linux and Pentesters Framework as a Foundation"
     print "for PTF this assumes the base directory is /pentest"
     print "This Version does not include an ability to change default PTF directory yet"
     raw_input("<Press ENTER to Continue>")
