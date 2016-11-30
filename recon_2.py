@@ -500,6 +500,8 @@ if __name__ == '__main__':
     print "This Tool uses Kali Linux and Pentesters Framework as a Foundation"
     print "for PTF this assumes the base directory is /pentest"
     print "This Version does not include an ability to change default PTF directory yet"
+    print "Attribution, additionally based off of @securitysift (Mike Czumak) from : http://www.securitysift.com/offsec-pwb-oscp/ then re-written but idea goes to him for inspriation and port parsing"
+
     raw_input("<Press ENTER to Continue>")
 
 
