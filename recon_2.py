@@ -26,7 +26,6 @@ import argparse
 # import nmap
 
 """
-
  further functionality
  https://hackertarget.com/7-nmap-nse-scripts-recon/
 

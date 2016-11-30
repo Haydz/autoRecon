@@ -4,7 +4,7 @@ def scan(command):
     launchresults = subprocess.check_output(command, shell=True)
     return launchresults
 
-def BaseLineTest(baseDir):
+def BaseLineTest(baseDir,secondDir = None):
 	print "+++++++++++++++++++++++++++++++++++"
 	print "+++++ RUNNING BASELINE CHECKS +++++"
 	print "++++ ROOT | Base Directory etc ++++"
@@ -49,5 +49,28 @@ def BaseLineTest(baseDir):
 		print e
 	FullPath = ''.join((FullPath, baseDir)) + '/'
 	print "Full path and baseDir for script will be ", FullPath
-	return FullPath
 
+
+	if secondDir:
+		try:
+			mkBaseDir = "mkdir %s/%s" % (baseDir,secondDir)
+			scan(mkBaseDir)
+		except Exception as e:
+			print e,
+			print " Cannot create %s directory\n" % secondDir
+
+		# check dir was created
+		try:
+			checkDir = "ls | grep %s%s" % (baseDir, secondDir)
+			checkDirDirResults = scan(checkDir)
+			if baseDir in checkDirDirResults:
+				print "BASE directory & Sub directory found.. continuing"
+		except Exception as e:
+			print e
+		print "Base Directory: %s" % baseDir
+		print "Sub Directory: %s%s" %(baseDir,secondDir)
+		#o se FullPath
+	else:
+		print "No Second Sub Directory Chosen"
+
+	return FullPath
