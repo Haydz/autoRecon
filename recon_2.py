@@ -60,9 +60,9 @@ class constants:
     oVersion = "unknown"
 
 def exhaustive():
+    IPFile= BasePath + 'allhostsup.txt'
 
-
-    for x in open('%sallhostsup.txt' % BasePath, 'r'):
+    for x in open(IPFile, 'r'):
        p4 = Process(target=allPort, args=(x,))
        p4.start()
 
@@ -70,13 +70,13 @@ def exhaustive():
     # launching not as multi process so we know when it finishes
     #CHANGE INTO MULTI PROCESSING
     #webports('%sallhostsup.txt' % BasePath)
-    p6 = Process(target=webports, args=('%sallhostsup.txt' % BasePath,))
-
+    p6 = Process(target=webports, args=(IPFile,))
+    p6.start()
 
     print "[!] Lauching SMBports scan"
-    smbScan ('%sallhostsup.txt' % BasePath)
-
-
+    #smbScan ('%sallhostsup.txt' % BasePath)
+    p7 = Process(target=smbScan, args=(IPFile,))
+    p7.start()
 
 ###### FUNCTIONS BELOW #####
 # this is the function that will run the multip processing - NEED TO CONFIRM IF THIS IS USED -- need to add this
@@ -134,19 +134,13 @@ def hostsup_scans(list):  # maybe change to starter scan
         exhaustive()
 
 
-
-
-#need to trouble shoot this
-    # if there are web ports we do eyewitness scan
-    # if no web ports we do not run
-
 def allPort(address):
     #CHANGE TO top 2000
     open('%sall_ports_allhosts.txt' % BasePath, 'w').close() # creating empty file each time its run
     address = address.strip("\n")
     # print address
     serv_dict = {}
-    print "[+] Starting top 2000 tcp ports scan for ", address
+    print "[+] Starting ALL 65K Ports scan for ", address
     tcpNameScan = 'nmap_%s_allports' % address
     # top one thousand ports
     TCPSCAN = 'nmap -vv -p1-65535  %s -oA %s%s' % (address, FullSubDirPath, tcpNameScan)
@@ -155,17 +149,17 @@ def allPort(address):
 
     parseOutputName = '%sall_ports.txt' % BasePath
     parseScanResults(tcp_results,parseOutputName, address)
-# generic nmap scan top 1000 ports
+
 def quicknmapScan(address):
     #CHANGE TO top 2000
     open('%squick_hosts_ports.txt' % BasePath, 'w').close() # creating empty file each time its run
     address = address.strip("\n")
     # print address
     serv_dict = {}
-    print "[+] Starting top 2000 tcp ports scan for ", address
+    print "[+] Starting top 3000 tcp ports scan for ", address
     tcpNameScan = 'nmap_%s_quick' % address
     # top one thousand ports
-    TCPSCAN = 'nmap -vv --top-ports 1000  %s -oA %s%s' % (address, FullSubDirPath, tcpNameScan)
+    TCPSCAN = 'nmap -vv --top-ports 3000  %s -oA %s%s' % (address, FullSubDirPath, tcpNameScan)
     print  "[!] Running scan: ",  TCPSCAN
     tcp_results = subprocess.check_output(TCPSCAN, shell=True)
 
@@ -211,8 +205,9 @@ def scan(command):
     launchresults = subprocess.check_output(command, shell=True)
     return launchresults
 
-
 def portSelection(filename, portsList, outputFile, type):
+    #This function receives results from nmap subprocess and i ports
+    #it will write ports to a file with the host
     placeholder = []
     print "\n=====PORT SELECTION Execution running==="
     print "File selected: ", filename
@@ -320,12 +315,13 @@ def ftpPort(filename):
     ftpScan = 'nmap -sV -Pn -vv -p 21 -iL %s --script=banner,ftp-anon --oA %sftpPorts' % (filename, BasePath)
 
     #ftpResults = scan(ftpScan)
+    """ GREP AND CUTTING FOR FTP ANONYMOUS
+     root@traversal-lap:~/PycharmProjects/autoRecon/base# cat ftpPorts.nmap  | grep -B 8 230 | grep "Nmap scan report" | cut -d " " -f 5
+    192.168.56.102
+     """
 
 
-""" GREP AND CUTTING FOR FTP ANONYMOUS
- root@traversal-lap:~/PycharmProjects/autoRecon/base# cat ftpPorts.nmap  | grep -B 8 230 | grep "Nmap scan report" | cut -d " " -f 5
-192.168.56.102
- """
+
 
 # need to add parsing the file for anonymous access.
 
