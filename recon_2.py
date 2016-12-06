@@ -22,6 +22,7 @@ import subprocess
 import time
 import baseTest
 import argparse
+from netaddr import *
 
 # import nmap
 
@@ -44,7 +45,7 @@ import argparse
  6) connect all various NSE scripts up
  7) ftp scan - log in for anonymous, output success anonmyous logins - Partly
  8) snmp scans - private, community strings
- 9) Nikto
+ 9) Nikto -done
  19 )dirbuster
 
 
@@ -302,7 +303,18 @@ def webports(filename):
 
         #to add Eye Witness here
         eyewitness('%shosts_webports.txt' % BasePath, 'EW_web_common')
-
+        #Nikto scan - needs to be on port 80 and 443 (any web ports found)
+        for x in open('%shosts_webports.txt' % BasePath,):
+            #print x.split(':') # No need to split ports as Nikto takes IP with Port in IP:PORT
+            x2 = x.split(':')[0]
+            x3 = int(x.split(':')[1])
+            DirbusterScan(x2,x3)
+            #DirbusterScan(x.split(':')[0], int(x.split(':')[1]))
+            #
+            # print x2
+            #
+            # print x3
+            #NiktoScan(IP.strip('\n'))
     else:
         print "no web ports found"
 
@@ -344,6 +356,47 @@ def smbScan(filename):
     else:
         print "[!]No SMB ports found"
         print "[!] Not running Enum4Linux"
+
+def NiktoScan(ipToScan):
+    if constants.osVersion == 'Debian':
+        NiktoPath = '/pentest/vulnerability-analysis/nikto'
+        command = '%s/nikto.pl -h %s >> %sNikto_%s.txt' % (NiktoPath, ipToScan, FullSubDirPath, ipToScan)
+    if constants.osVersion == 'Kali':
+        command = 'nikto -h %s >> %senum4_%s.output' % (ipToScan, BasePath, ipToScan)
+        FNULL = open(os.devnull, 'w')  # Suppress enum4linux output
+        subprocess.Popen(command, stdout=FNULL, stderr=subprocess.STDOUT, shell=True).wait()
+        FNULL.close()
+
+    print  "[-] Running Nikto with: %s" % command
+
+    p5 = Process(target=scan, args=(command,))
+    p5.start()
+
+def DirbusterScan(ipToScan,port):
+    #open('%sDirb_%s.txt' % (FullSubDirPath,ipToScan), 'w').close()
+    if port == 80:
+        prepend = 'http://'
+    elif port == 443:
+        prepend = 'https://'
+    else:
+        prepend = ""
+    open('%sDirb_%s_%s.txt' % (FullSubDirPath, ipToScan,str(port)), 'w').close()
+    if constants.osVersion == 'Debian':
+        DirbPath = '/pentest/intelligence-gathering/dirb'
+        command = '%s/dirb %s%s %s/wordlists/common.txt >> %sDirb_%s_%s.txt' % (DirbPath, prepend, ipToScan,DirbPath, FullSubDirPath, ipToScan,str(port))
+    elif constants.osVersion == 'Kali':
+        command = 'dirb %s%s >> %senum4_%s.output' % (prepend, ipToScan, BasePath, ipToScan)
+        FNULL = open(os.devnull, 'w')  # Suppress enum4linux output
+        subprocess.Popen(command, stdout=FNULL, stderr=subprocess.STDOUT, shell=True).wait()
+        FNULL.close()
+    else:
+        command = "NOTHING RUNNING"
+
+    print  "[-] Running Dirb with: %s" % command
+
+    p5 = Process(target=scan, args=(command,))
+    p5.start()
+
 
 
 def Enum4Linux(ipToScan):
@@ -493,7 +546,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print "AUTORECON - **IN DEVELOPMENT**
+    print "AUTORECON - **IN DEVELOPMENT**"
     print "by - @haydnjohnson, contributers - @loneferret"
     print "This Tool uses Kali Linux and Pentesters Framework as a Foundation"
     print "for PTF this assumes the base directory is /pentest"
@@ -539,6 +592,27 @@ if __name__ == '__main__':
        checkKaliApps()
     f = open(textfile, 'r') #opening file with IP addresses
 
+    IndividualIPs = []
+    try:
+        lines = open(textfile).read().split("\n")
+        for x in lines:
+            if '/' in x:
+                print 'subnet FOUND'
+                subnetIP = IPNetwork(x)
+                for x in subnetIP:
+                    IndividualIPs.append(x)
+        else:
+            IndividualIPs.append(x)
+
+    except Exception as e:
+        print e
+
+    print len(IndividualIPs)
+
+
+
+
+
 
     """THE BELOW MAY BE REDUNDANT as all scans work off the original file"""
     # print"[-] Opening file with IP addresses..."
@@ -566,9 +640,13 @@ if __name__ == '__main__':
 
     for x in range(0,5):
         print "[!]First Hosts up Scan finished, Check %shostsup3_ports.nmap" % BasePath
+    try:
+        p1 = Process(target=hostsup_scans, args=(textfile,))
+        p1.start()
+    except Exception as e:
+        print e
 
-    p1 = Process(target=hostsup_scans, args=(textfile,))
-    p1.start()
+    webports('IP.txt')
 
 
     # tcp_results3 = subprocess.check_output(TCPSCAN3, shell=True)
