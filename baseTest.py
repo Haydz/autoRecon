@@ -61,7 +61,7 @@ def BaseLineTest(baseDir,secondDir = None):
 
 		# check dir was created
 		try:
-			checkDir = "ls | grep %s%s" % (baseDir, secondDir)
+			checkDir = "ls | grep %s/%s" % (baseDir, secondDir)
 			checkDirDirResults = scan(checkDir)
 			if baseDir in checkDirDirResults:
 				print "BASE directory & Sub directory found.. continuing"
