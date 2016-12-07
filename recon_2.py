@@ -67,6 +67,7 @@ def exhaustive():
        p4 = Process(target=allPort, args=(x,))
        p4.start()
 
+
     print "[!] Lauching Webports scan"
     # launching not as multi process so we know when it finishes
     #CHANGE INTO MULTI PROCESSING
@@ -203,9 +204,12 @@ def quicknmapScan(address):
 
 
 def scan(command):
-    launchresults = subprocess.check_output(command, shell=True)
-    return launchresults
-
+    try:
+        launchresults = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+        return launchresults
+    except subprocess.CalledProcessError as e:
+        print e
+        return None
 def portSelection(filename, portsList, outputFile, type):
     #This function receives results from nmap subprocess and i ports
     #it will write ports to a file with the host
@@ -231,7 +235,7 @@ def portSelection(filename, portsList, outputFile, type):
             if x not in placeholder:
                 placeholder.append(x+":"+str(port))
         # writing hosts with correct ports to a file
-    outputFile = BasePath + outputFile #place to save hosts  with SMB ports open
+    outputFile = BasePath + outputFile #place to save hosts
     print "\n"  # to add space"
     open(outputFile, 'w').close() #creating Empty File
     if placeholder: # if placeholder has IPS
@@ -285,7 +289,6 @@ def parseScanResults(results, filename, address):
             qhp.close()
 
 
-
 def webports(filename):
     open('%swebports.txt' % BasePath, 'w').close() # creating empty file to remove duplication
     #filename = BasePath + filename
@@ -293,7 +296,8 @@ def webports(filename):
     portList = [80, 443, 8080, 8443, 9821, 1311, 2480] #ports list of common web ports
     webScan = 'nmap -p %s -iL %s -oA %swebPorts_common' % (str(portList)[1:-1], filename, BasePath)
     #print webScan
-    webresults = scan(webScan)
+    #webresults = scan(webScan)
+    scan(webScan)
     OutputFile = 'hosts_webports.txt'
     type = 'common web '
     test = portSelection('%swebPorts_common.gnmap' % BasePath, portList, OutputFile, type)
@@ -314,7 +318,7 @@ def webports(filename):
             # print x2
             #
             # print x3
-            #NiktoScan(IP.strip('\n'))
+            NiktoScan(x.strip('\n'))
     else:
         print "no web ports found"
 
@@ -340,7 +344,7 @@ def ftpPort(filename):
 def smbScan(filename):
     print "[-] Starting SMB scan to run enum4Linux and smb checks"
     name = 'enum4linux'
-    portList = [139,445]
+    portList = [139, 445]
     smbScan = 'nmap -sV -Pn -vv -p %s -iL %s  --oA %s%s' % (str(portList)[1:-1], filename, BasePath, name)
     #--script=smb-enum-shares,smb-enum-users,smb-os-discovery,smb-brute
     scan(smbScan)
@@ -348,10 +352,11 @@ def smbScan(filename):
     OutputFile = 'hosts_smbports.txt'
     test = portSelection('%s%s.gnmap' % (BasePath, name), portList, OutputFile, type1)
 
-    smbhostsfile = BasePath + OutputFile
+    file = BasePath + OutputFile
     if test == True:
-        print "[!] SMB Ports were identified, running EyeWitness"
-        for x in open(smbhostsfile, 'r'):
+        print "[!] SMB Ports were identified, running Enum 4 Linux"
+        for x in open(file, 'r'):
+
             Enum4Linux(x.split(":")[0])
     else:
         print "[!]No SMB ports found"
@@ -400,6 +405,8 @@ def DirbusterScan(ipToScan,port):
 
 
 def Enum4Linux(ipToScan):
+
+
     if constants.osVersion == 'Debian':
         Enum4LinuxPath = '/pentest/intelligence-gathering/enum4linux'
         command = '%s/enum4linux.pl %s >> %senum4_%s.output' % (Enum4LinuxPath, ipToScan, FullSubDirPath, ipToScan)
@@ -410,10 +417,11 @@ def Enum4Linux(ipToScan):
         FNULL.close()
 
     print  "[-] Running Enum4Linux with: %s" % command
-
-    p5 = Process(target=scan, args=(command,))
-    p5.start()
-
+    try:
+        p5 = Process(target=scan, args=(command,))
+        p5.start()
+    except Exception as e:
+        print e
 
 
 def eyewitness(filename, outputName):  # expecting IP addrees list
@@ -590,7 +598,7 @@ if __name__ == '__main__':
     #checking OS system
     if "Kali" == getOsVersion():
        checkKaliApps()
-    f = open(textfile, 'r') #opening file with IP addresses
+    #f = open(textfile, 'r') #opening file with IP addresses
 
     IndividualIPs = []
     try:
@@ -599,15 +607,15 @@ if __name__ == '__main__':
             if '/' in x:
                 print 'subnet FOUND'
                 subnetIP = IPNetwork(x)
-                for x in subnetIP:
-                    IndividualIPs.append(x)
+                for b in subnetIP:
+                    IndividualIPs.append(b)
         else:
             IndividualIPs.append(x)
 
     except Exception as e:
         print e
 
-    print len(IndividualIPs)
+    print "Total Individua IPs: ", len(IndividualIPs)
 
 
 
@@ -646,8 +654,6 @@ if __name__ == '__main__':
     except Exception as e:
         print e
 
-    webports('IP.txt')
-
 
     # tcp_results3 = subprocess.check_output(TCPSCAN3, shell=True)
 
@@ -661,7 +667,4 @@ if __name__ == '__main__':
     #     enumThread.daemon = True
     #     enumThread.start()
 
-
-
-    #open('%s testinghosts.txt' %BasePath, 'w').close()
-    f.close()
+    #f.close()
