@@ -145,7 +145,7 @@ def allPort(address):
     print "[+] Starting ALL 65K Ports scan for ", address
     tcpNameScan = 'nmap_%s_allports' % address
     # top one thousand ports
-    TCPSCAN = 'nmap -vv -p1-65535  %s -oA %s%s' % (address, FullSubDirPath, tcpNameScan)
+    TCPSCAN = 'nmap -vv -sV -p1-65535  %s -oA %s%s' % (address, FullSubDirPath, tcpNameScan)
     print  "[!] Running scan: ",  TCPSCAN
     tcp_results = subprocess.check_output(TCPSCAN, shell=True)
 
@@ -161,7 +161,7 @@ def quicknmapScan(address):
     print "[+] Starting top 3000 tcp ports scan for ", address
     tcpNameScan = 'nmap_%s_quick' % address
     # top one thousand ports
-    TCPSCAN = 'nmap -vv --top-ports 3000  %s -oA %s%s' % (address, FullSubDirPath, tcpNameScan)
+    TCPSCAN = 'nmap -vv -sV --top-ports 3000  %s -oA %s%s' % (address, FullSubDirPath, tcpNameScan)
     print  "[!] Running scan: ",  TCPSCAN
     tcp_results = subprocess.check_output(TCPSCAN, shell=True)
 
@@ -426,7 +426,7 @@ def Enum4Linux(ipToScan):
 
 def eyewitness(filename, outputName):  # expecting IP addrees list
     print "[-] Starting Eye Witness scan"
-    # this requires editing the Eyewitness.py to use /bin/phantomjs
+    # this requires editing the Eyewitness.py to use /bin/-
     checkDir = ""
     if constants.osVersion == 'Debian':
         try:
@@ -444,12 +444,12 @@ def eyewitness(filename, outputName):  # expecting IP addrees list
         else:
             print "%s directory not found, EyeWitness will create it." % outputName
         eyewitnessPath = '/pentest/intelligence-gathering/eyewitness' #using PTF base directory for eyewitness
-        command = '%s/EyeWitness.py --headless --prepend-https --prepend-http --no-prompt  -x %s -d %s%s' % (
+        command = '%s/EyeWitness.py --headless --prepend-https --prepend-http --no-prompt  -f %s -d %s%s' % (
             eyewitnessPath, filename, BasePath, outputName)
         print  "[!] Running EyeWitness with: ", command
     elif constants.osVersion == 'Kali':
         # filename = webPorts_common.xml
-        command = 'eyewitness --web --no-prompt -x ../../../../../root/TestScript/%s%s' % (filename)
+        command = 'eyewitness --web --no-prompt -f ../../../../../root/TestScript/%s%s' % (filename)
         print "[!] Running EyeWitness with: ", command
     else:
         command = "**EYE WITNESS WILL NOT RUN*"
